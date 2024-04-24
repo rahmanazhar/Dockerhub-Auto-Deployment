@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  echo:
+    image: rahmanazhar/docker-sample:latest
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
