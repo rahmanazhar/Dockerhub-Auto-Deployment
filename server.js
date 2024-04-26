@@ -11,7 +11,7 @@ const port = 8090;
 
 // Define repository URL and file path
 const repoUrl =
-  "https://gist.githubusercontent.com/hafiz-azhar/22e31800406a2a6ea787bbab6e856d1d/raw/7fde3272612d10937208bec910fe4e92dc9b0b5d/docker-compose.yml";
+  "https://gist.githubusercontent.com/hafiz-azhar/22e31800406a2a6ea787bbab6e856d1d/raw/1fbdb87c000bf9b05780a053a29061358a9807bb/docker-compose.yml";
 const filePath = "docker-compose.yml";
 const dockerRepoNameWithTag = "rahmanazhar/docker-sample:latest";
 const dockerRepoName = "rahmanazhar/docker-sample";
