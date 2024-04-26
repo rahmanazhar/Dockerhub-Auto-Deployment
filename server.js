@@ -1,16 +1,20 @@
-const Docker = require("dockerode");
+
 const fs = require("fs");
 const { exec } = require("child_process");
 const http = require("http");
 const https = require("https");
 const { URL } = require("url");
-const docker = new Docker();
+const express = require("express");
+const bodyParser = require("body-parser");
+const app = express();
+const port = 8090;
 
 // Define repository URL and file path
 const repoUrl =
-  "https://gist.githubusercontent.com/hafiz-azhar/22e31800406a2a6ea787bbab6e856d1d/raw/b3242796c416711c638ddc5691fe361373b53118/docker-compose.yml";
+  "https://gist.githubusercontent.com/hafiz-azhar/22e31800406a2a6ea787bbab6e856d1d/raw/7fde3272612d10937208bec910fe4e92dc9b0b5d/docker-compose.yml";
 const filePath = "docker-compose.yml";
-const dockerRepoName = "rahmanazhar/docker-sample:latest";
+const dockerRepoNameWithTag = "rahmanazhar/docker-sample:latest";
+const dockerRepoName = "rahmanazhar/docker-sample";
 const composeDirectory = "./";
 
 // Function to fetch Docker Compose file from the repository
@@ -42,34 +46,7 @@ async function fetchDockerComposeFile(repoUrl, filePath) {
   });
 }
 
-// Function to monitor Docker Hub for image updates
-function monitorDockerHub(repoName, callback) {
-  console.log("Monitoring Docker Hub for image updates...");
-  docker.getEvents(
-    { filters: { type: ["image"], event: ["push"] } },
-    (err, stream) => {
-      if (err) {
-        console.error("Error monitoring Docker Hub:", err);
-        return;
-      }
-      stream.setEncoding("utf8");
-      stream.on("data", (data) => {
-        try {
-          const eventData = JSON.parse(data);
-          console.log("Docker image updated:", eventData.id);
-          if (eventData.id === repoName) {
-            callback();
-          }
-        } catch (error) {
-          console.error("Error parsing Docker event data:", error);
-        }
-      });
-    }
-  );
-}
-
 // Function to run Docker compose
-
 function runDockerCompose() {
   console.log("Running Docker compose...");
   const command = `docker-compose -f ${composeDirectory}/docker-compose.yml up -d --build`;
@@ -102,8 +79,26 @@ function runDockerCompose() {
   });
 }
 
-// Fetch Docker Compose file
-fetchDockerComposeFile(repoUrl, filePath);
+app.use(bodyParser.json());
 
-// Monitor Docker Hub for image updates
-monitorDockerHub(dockerRepoName, runDockerCompose);
+// Endpoint to receive Docker Hub push events
+app.post("/dockerhub-webhook", async (req, res) => {
+  try {
+    const eventData = req.body;
+    console.log("Docker image updated:", eventData.repository.repo_name);
+    if (eventData.repository.repo_name === dockerRepoName) {
+        // Fetch Docker Compose file
+        await fetchDockerComposeFile(repoUrl, filePath);
+        runDockerCompose();
+    }
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error handling Docker Hub webhook:", error);
+    res.sendStatus(500);
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Webhook server listening at http://localhost:${port}`);
+});
